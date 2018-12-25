@@ -10,21 +10,13 @@ from sklearn import preprocessing
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-today = dt.datetime.now()
-one_year_before = today - dt.timedelta(days=365)
-start_date = str(one_year_before.year)+str(one_year_before.month)+str(one_year_before.day)
-end_date = str(today.year) + str(today.month) + str(today.day)
-
-three_m = today - dt.timedelta(days=90)
-three_m_int = three_m.year*10000 + three_m.month*100+three_m.day
-
 def calculate_realized(series):
     data = np.asarray(series)
     numerator = data.copy()
     numerator = np.delete(numerator, numerator.__len__() - 1)
     denominator = data.copy()[1:data.__len__()]
 
-    return math.sqrt(np.sum(np.square(np.log(numerator / denominator))) * (252 / numerator.__len__())) * 100
+    return (math.sqrt(np.sum(np.square(np.log(numerator / denominator))) * (252 / numerator.__len__())) * 100)
 
 
 level = pd.read_csv('index_level.csv')
