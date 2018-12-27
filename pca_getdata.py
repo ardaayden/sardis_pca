@@ -40,3 +40,31 @@ temp = citiapi.get_data(client_id, access_token, start_date, end_date, 'EQUITY.V
 temp['name']= 'SPX'
 varswap = varswap.append(temp)
 varswap.to_csv('index_varswap.csv', index=False)
+
+df = pd.DataFrame()
+temp = citiapi.get_data(client_id, access_token, start_date, end_date, 'EQUITY.VARSWAP.SPX.1M.EOD.CITI')
+temp['item'] = 'varswap'
+temp['name'] = 'SPX'
+temp['tenor'] = '1m'
+df = df.append(temp)
+temp = citiapi.get_data(client_id, access_token, start_date, end_date, 'EQUITY.VARSWAP.STOXX50E.1M.EOD.CITI')
+temp['item'] = 'varswap'
+temp['name'] = 'STOXX50E'
+temp['tenor'] = '1m'
+df = df.append(temp)
+
+df.to_csv('varswap.csv',index=False)
+
+df = pd.DataFrame()
+temp = citiapi.get_data(client_id, access_token, start_date, end_date, 'EQUITY.EQUITY_INDEX.92141.LEVEL.REUTERS')
+temp['item'] = 'level'
+temp['name'] = 'SPX'
+df = df.append(temp)
+temp = citiapi.get_data(client_id, access_token, start_date, end_date, 'EQUITY.EQUITY_INDEX.953751.LEVEL.REUTERS')
+temp['item'] = 'level'
+temp['name'] = 'STOXX50E'
+df = df.append(temp)
+
+df.to_csv('level.csv',index=False)
+
+

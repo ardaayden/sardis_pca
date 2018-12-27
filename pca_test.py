@@ -9,6 +9,7 @@ from numpy import linalg as LA
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+import matplotlib.cm as cm
 
 today = dt.datetime.now()
 one_year_before = today - dt.timedelta(days=365)
@@ -54,8 +55,10 @@ for items in list(realized.index):
 realized.columns = ['Realized_SPX', 'Realized_SX7E']
 varswap.columns = ['varswap_SPX','varswap_SX7E']
 spread = varswap.iloc[:,1]-varswap.iloc[:,0]
-spread = spread - spread.mean()
-spread = spread/spread.std()
+
+'''for next day'''
+spread = spread.shift()
+spread.iloc[0]  =spread.iloc[1]
 
 merged = pd.concat([realized, varswap], axis=1)
 merged = merged.fillna(method='ffill')
@@ -80,8 +83,10 @@ percentage = [item/sum(w)for item in w]
 first_component = max(percentage) # en yüksek eigenvalue
 
 first_index = percentage.index(first_component) # en yüksek eigenvalue sahip index
-first_index = 1
 projection = v[0][first_index]*normalized.iloc[:,0]+v[1][first_index]*normalized.iloc[:,1]+v[2][first_index]*normalized.iloc[:,2]+v[3][first_index]*normalized.iloc[:,3]
+projection1 = v[0][1]*normalized.iloc[:,0]+v[1][1]*normalized.iloc[:,1]+v[2][1]*normalized.iloc[:,2]+v[3][1]*normalized.iloc[:,3]
+
+
 
 final_df = pd.concat([projection, spread], axis=1)
 #print(pd.DataFrame(plt.matshow(final_df.corr())._A))
@@ -122,3 +127,76 @@ plt.plot([min(list(final_df_1.iloc[:,index_first])),max(list(final_df_1.iloc[:,i
 
 print(str(fit[0])+' '+ str(fit[1]))
 plt.show()
+
+'''
+step1 =  [item//1 for item in list(spread.values)]
+step1 = pd.DataFrame(step1)
+step1.index = spread.index
+
+final_df = pd.concat([projection, projection1,step1], axis=1)
+
+plt.scatter(list(final_df.iloc[:,0]), list(final_df.iloc[:,1]))
+
+
+unique_steps = set(step1[0])
+colors = cm.rainbow(np.linspace(0, 1, unique_steps.__len__()))
+
+count = 0
+final_df.columns = ['pca1','pca2','spread levels']
+for item in unique_steps:
+    c = colors[count]
+    step_df = final_df[final_df['spread levels']==item]
+    plt.scatter(step_df.iloc[:,1], step_df.iloc[:,2], color=c)
+    count = count+1
+
+
+plt.show()
+'''
+import bisect
+from sklearn.preprocessing import StandardScaler
+X_std = StandardScaler().fit_transform(merged)
+sklearn_pca = PCA(n_components=4)
+Y_sklearn = sklearn_pca.fit_transform(X_std)
+
+#step_size = 4
+#step1 =  [item//step_size for item in list(spread.values)]
+steps = [3,5,7,9,11,13]
+step1 = pd.DataFrame(([(bisect.bisect_left(steps,item)) for item in spread.values]))
+step1.index = spread.index
+
+Y_sklearn = pd.DataFrame(Y_sklearn)
+Y_sklearn.index = merged.index
+final_df = pd.concat([Y_sklearn,step1], axis=1)
+
+
+
+unique_steps = set(step1[0])
+colors = cm.rainbow(np.linspace(0, 1, unique_steps.__len__()))
+colors = ['blue', 'green', 'red', 'cyan', 'magenta' ,'yellow', 'black', 'white']
+
+
+fig, ax = plt.subplots()
+
+count = 0
+#final_df.columns = ['Realized_SPX','Realized_SX7E','varswap_SPX','varswap_SX7E','spread levels']
+final_df.columns = ['PCA1','PCA2','PCA3','PCA4','spread levels']
+
+unique_steps = list(unique_steps)
+unique_steps.sort()
+for item in unique_steps:
+    c = colors[count]
+    step_df = final_df[final_df['spread levels']==item]
+    if item == 0:
+        ax.scatter(step_df.iloc[:,1], step_df.iloc[:,4], color=c, label=' < ' +(str(steps[0])))
+    elif item == max(unique_steps):
+        ax.scatter(step_df.iloc[:,1], step_df.iloc[:,4], color=c, label=' > ' +(str(steps[-1])))
+    else:
+        ax.scatter(step_df.iloc[:,1], step_df.iloc[:,4], color=c, label=(str(steps[item-1])+'-'+str(steps[item])))
+
+    count = count+1
+
+
+ax.legend()
+ax.grid(True)
+plt.show()
+
